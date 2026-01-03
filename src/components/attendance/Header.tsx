@@ -20,7 +20,7 @@ export const Header = () => {
         <div className="flex items-center gap-3 bg-primary-foreground/10 px-4 py-2 rounded-xl backdrop-blur-sm">
           <User className="w-5 h-5" />
           <div className="text-right">
-            <p className="text-sm font-semibold">Mosa Khan</p>
+            <p className="text-sm font-semibold">Aziz Ahmad</p>
             <p className="text-xs text-primary-foreground/70">Administrator</p>
           </div>
         </div>
