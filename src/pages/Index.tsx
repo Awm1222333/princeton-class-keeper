@@ -17,13 +17,22 @@ import { AbsentLists } from '@/components/attendance/AbsentLists';
 import { ArchivedMonths } from '@/components/attendance/ArchivedMonths';
 import { NewMonthDialog } from '@/components/attendance/NewMonthDialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
 import { 
   ClipboardList, 
   UserX, 
   Archive, 
   LayoutDashboard,
   Wifi,
-  WifiOff
+  WifiOff,
+  AlertTriangle
 } from 'lucide-react';
 
 const Index = () => {
@@ -33,6 +42,7 @@ const Index = () => {
   const [editingStudent, setEditingStudent] = useState<Student | null>(null);
   const [isNewMonthOpen, setIsNewMonthOpen] = useState(false);
   const [isOnline, setIsOnline] = useState(navigator.onLine);
+  const [permanentAbsentWarning, setPermanentAbsentWarning] = useState<string | null>(null);
 
   useEffect(() => {
     const handleOnline = () => setIsOnline(true);
@@ -104,14 +114,31 @@ const Index = () => {
           attendance: { ...s.attendance, [day]: status },
         };
 
-        // Check for permanent absent
-        updatedStudent.isPermanentAbsent = checkPermanentAbsent(updatedStudent);
-
+        // Don't auto-set permanent absent - let the warning dialog handle it
         return updatedStudent;
       });
 
       return { ...c, students: updatedStudents };
     }));
+  };
+
+  const handlePermanentAbsentWarning = (studentId: string) => {
+    setPermanentAbsentWarning(studentId);
+  };
+
+  const handleConfirmPermanentAbsent = (confirm: boolean) => {
+    if (confirm && permanentAbsentWarning && selectedClassId) {
+      setClasses(classes.map(c => {
+        if (c.id !== selectedClassId) return c;
+        return {
+          ...c,
+          students: c.students.map(s => 
+            s.id === permanentAbsentWarning ? { ...s, isPermanentAbsent: true } : s
+          ),
+        };
+      }));
+    }
+    setPermanentAbsentWarning(null);
   };
 
   const handleEditStudent = (student: Student) => {
@@ -230,6 +257,7 @@ const Index = () => {
                   onUpdateAttendance={handleUpdateAttendance}
                   onEditStudent={handleEditStudent}
                   onDeleteStudent={handleDeleteStudent}
+                  onPermanentAbsentWarning={handlePermanentAbsentWarning}
                 />
               </TabsContent>
 
@@ -263,7 +291,7 @@ const Index = () => {
               and works completely offline.
             </p>
             <p className="text-sm text-muted-foreground">
-              Administrator: <span className="font-semibold text-primary">Mosa Khan</span>
+              Administrator: <span className="font-semibold text-primary">Aziz Ahmad</span>
             </p>
           </div>
         )}
@@ -291,12 +319,41 @@ const Index = () => {
         )}
       </main>
 
+      {/* Permanent Absent Warning Dialog */}
+      <Dialog open={!!permanentAbsentWarning} onOpenChange={() => setPermanentAbsentWarning(null)}>
+        <DialogContent className="bg-card">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-bold text-warning flex items-center gap-2">
+              <AlertTriangle className="w-5 h-5" />
+              Permanent Absent Warning
+            </DialogTitle>
+          </DialogHeader>
+          <p className="py-4 text-muted-foreground">
+            This student has been absent for 5 days and is about to become a <strong>Permanent Absent</strong> student.
+          </p>
+          <p className="text-sm text-muted-foreground">
+            Do you want to move this student to the Permanent Absent List?
+          </p>
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => handleConfirmPermanentAbsent(false)}>
+              Cancel
+            </Button>
+            <Button 
+              onClick={() => handleConfirmPermanentAbsent(true)}
+              className="bg-warning text-warning-foreground hover:bg-warning/90"
+            >
+              Yes, Move to Permanent Absent
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {/* Footer */}
       <footer className="border-t border-border py-6 mt-12 print-hidden">
         <div className="max-w-7xl mx-auto px-4 text-center text-sm text-muted-foreground">
           <p>PRINCETON Course Attendance System</p>
           <p className="mt-1">Developed for Language Institutes & Training Centers</p>
-          <p className="mt-1">Administrator: <span className="font-semibold">Mosa Khan</span></p>
+          <p className="mt-1">Administrator: <span className="font-semibold">Aziz Ahmad</span> | Developed by: <span className="font-semibold text-primary">Mosa Khan</span></p>
         </div>
       </footer>
     </div>

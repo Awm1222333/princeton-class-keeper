@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Student } from '@/types/attendance';
 import { generateId, isValidMobileNumber } from '@/utils/attendance';
 import { UserPlus, X } from 'lucide-react';
@@ -31,16 +31,37 @@ export const StudentForm = ({
   editStudent,
   nextSerialNumber,
 }: StudentFormProps) => {
-  const [formData, setFormData] = useState<Partial<Student>>(
-    editStudent || {
-      firstName: '',
-      fatherName: '',
-      mobileNumber: '',
-      registrationNumber: '',
-      feesPaid: false,
-      notes: '',
+  const [formData, setFormData] = useState<Partial<Student>>({
+    firstName: '',
+    fatherName: '',
+    mobileNumber: '',
+    registrationNumber: '',
+    feesPaid: false,
+    notes: '',
+  });
+
+  // Pre-fill form when editing a student
+  useEffect(() => {
+    if (editStudent) {
+      setFormData({
+        firstName: editStudent.firstName,
+        fatherName: editStudent.fatherName,
+        mobileNumber: editStudent.mobileNumber,
+        registrationNumber: editStudent.registrationNumber,
+        feesPaid: editStudent.feesPaid,
+        notes: editStudent.notes || '',
+      });
+    } else {
+      setFormData({
+        firstName: '',
+        fatherName: '',
+        mobileNumber: '',
+        registrationNumber: '',
+        feesPaid: false,
+        notes: '',
+      });
     }
-  );
+  }, [editStudent, isOpen]);
 
   const handleSubmit = () => {
     if (!formData.firstName?.trim()) {

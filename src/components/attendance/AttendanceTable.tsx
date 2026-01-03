@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Student } from '@/types/attendance';
 import { calculateStudentStats, isValidMobileNumber } from '@/utils/attendance';
-import { Edit2, Trash2, AlertTriangle } from 'lucide-react';
+import { Edit2, Trash2, AlertTriangle, Phone } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -16,6 +16,7 @@ interface AttendanceTableProps {
   onUpdateAttendance: (studentId: string, day: number, status: 'P' | 'A' | 'L' | '') => void;
   onEditStudent: (student: Student) => void;
   onDeleteStudent: (studentId: string) => void;
+  onPermanentAbsentWarning?: (studentId: string) => void;
 }
 
 export const AttendanceTable = ({
@@ -23,6 +24,7 @@ export const AttendanceTable = ({
   onUpdateAttendance,
   onEditStudent,
   onDeleteStudent,
+  onPermanentAbsentWarning,
 }: AttendanceTableProps) => {
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
   
@@ -49,6 +51,28 @@ export const AttendanceTable = ({
       onDeleteStudent(deleteConfirm);
       setDeleteConfirm(null);
     }
+  };
+
+  const handleAttendanceClick = (studentId: string, day: number, currentStatus: 'P' | 'A' | 'L' | '' | undefined) => {
+    const newStatus = cycleStatus(currentStatus);
+    onUpdateAttendance(studentId, day, newStatus);
+    
+    // Check if this makes it 5 absents and call the warning handler
+    if (newStatus === 'A' && onPermanentAbsentWarning) {
+      const student = students.find(s => s.id === studentId);
+      if (student) {
+        const updatedAttendance = { ...student.attendance, [day]: newStatus };
+        const absentCount = Object.values(updatedAttendance).filter(s => s === 'A').length;
+        if (absentCount === 5) {
+          onPermanentAbsentWarning(studentId);
+        }
+      }
+    }
+  };
+
+  // Handle mobile number click-to-call (double-tap for mobile)
+  const handleMobileClick = (mobileNumber: string) => {
+    window.location.href = `tel:${mobileNumber}`;
   };
 
   if (activeStudents.length === 0) {
@@ -107,7 +131,14 @@ export const AttendanceTable = ({
                       {student.fatherName}
                     </td>
                     <td className={`px-3 py-2 ${mobileInvalid ? 'mobile-warning' : ''}`}>
-                      {student.mobileNumber}
+                      <button
+                        onDoubleClick={() => handleMobileClick(student.mobileNumber)}
+                        className="flex items-center gap-1 hover:text-primary transition-colors cursor-pointer"
+                        title="Double-tap to call"
+                      >
+                        <Phone className="w-3 h-3 hidden sm:inline" />
+                        {student.mobileNumber}
+                      </button>
                     </td>
                     <td className="px-3 py-2">{student.registrationNumber}</td>
                     <td className="px-3 py-2 text-center">
@@ -122,10 +153,10 @@ export const AttendanceTable = ({
                     {days.map(day => (
                       <td key={day} className="px-1 py-2 text-center">
                         <button
-                          onClick={() => onUpdateAttendance(
+                          onClick={() => handleAttendanceClick(
                             student.id,
                             day,
-                            cycleStatus(student.attendance[day])
+                            student.attendance[day]
                           )}
                           className={`w-8 h-8 rounded-md text-xs font-bold transition-all hover:scale-110 ${getStatusClass(student.attendance[day])}`}
                         >

@@ -125,7 +125,7 @@ export const ClassSelector = ({
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent 
-          className="w-[250px] bg-card border-2 border-border shadow-elevated z-50"
+          className="w-[250px] bg-card border-2 border-border shadow-elevated z-50 max-h-[300px] overflow-y-auto"
           align="start"
         >
           {classes.length === 0 ? (
